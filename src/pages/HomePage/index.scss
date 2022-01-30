@@ -1,0 +1,12 @@
+/* @use '../../index.scss';
+
+.ant-page-header-heading {
+  @extend .container;
+}
+ */
+.layout {
+  &-content {
+    min-height: 280px;
+    padding: 24px;
+  }
+}

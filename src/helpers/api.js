@@ -43,7 +43,7 @@ export default class API {
       if (!err.response) {
         throw new Error('Something went wrong')
       } else {
-        throw new Error(e.response.data.detail)
+        throw new Error(err.response.data.detail)
       }
     }
   }
