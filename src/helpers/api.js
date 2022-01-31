@@ -41,7 +41,7 @@ export default class API {
       return response.data
     } catch (err) {
       if (!err.response) {
-        throw new Error('Something went wrong')
+        throw new Error('Something went wrong', err.message)
       } else {
         throw new Error(err.response.data.detail)
       }
