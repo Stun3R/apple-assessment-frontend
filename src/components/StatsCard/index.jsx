@@ -27,7 +27,11 @@ const StatsCard = ({ title, data, loading }) => {
   }
 
   return (
-    <Card title={title} bodyStyle={{ padding: '8px 0' }} loading={loading}>
+    <Card
+      title={title}
+      bodyStyle={{ padding: loading ? '24px' : '8px 0' }}
+      loading={loading}
+    >
       <Pie className="charts" {...config} />
     </Card>
   )
