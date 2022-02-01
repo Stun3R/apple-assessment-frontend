@@ -143,7 +143,7 @@ const HomePage = () => {
       /**
        * Check if we edit or create a project
        */
-      if (selectedProject) {
+      if (selectedProject.title) {
         await api.update('projects', selectedProject.id, values)
         await loadProjects(state.params)
         await loadCategories()
