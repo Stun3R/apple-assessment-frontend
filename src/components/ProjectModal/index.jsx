@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import { Form, Input, Modal } from 'antd'
-import { DebounceSelect } from '../'
+import { DebounceSelect } from '..'
 import { api } from '../../helpers'
 
 const fetchOptions = async (entity, keys, search) => {
@@ -13,7 +13,13 @@ const fetchOptions = async (entity, keys, search) => {
     )
 }
 
-const CreateProjectModal = ({ visible, loading, onSubmit, onCancel }) => {
+const CreateProjectModal = ({
+  visible,
+  loading,
+  onSubmit,
+  onCancel,
+  selectedProject,
+}) => {
   const [form] = Form.useForm()
 
   const handleOk = () => {
@@ -31,7 +37,7 @@ const CreateProjectModal = ({ visible, loading, onSubmit, onCancel }) => {
       title="Project"
       visible={visible}
       onOk={handleOk}
-      okText="Create"
+      okText={selectedProject ? 'Update' : 'Create'}
       onCancel={onCancel}
       getContainer={false}
       confirmLoading={loading}
@@ -40,7 +46,7 @@ const CreateProjectModal = ({ visible, loading, onSubmit, onCancel }) => {
         form={form}
         layout="vertical"
         name="form_in_modal"
-        initialValues={{ assigned_to: null }}
+        initialValues={{ ...selectedProject }}
       >
         <Form.Item
           name="title"
@@ -72,12 +78,9 @@ const CreateProjectModal = ({ visible, loading, onSubmit, onCancel }) => {
         >
           <DebounceSelect
             placeholder="Select a category"
+            fetchOnFocus={true}
             fetchOptions={(e) =>
-              fetchOptions(
-                'categories',
-                { label: 'category', value: 'category' },
-                e
-              )
+              fetchOptions('categories', { label: 'name', value: 'name' }, e)
             }
           />
         </Form.Item>
@@ -85,6 +88,7 @@ const CreateProjectModal = ({ visible, loading, onSubmit, onCancel }) => {
           <DebounceSelect
             placeholder="Assigned the project to someone"
             allowNull={true}
+            fetchOnFocus={true}
             fetchOptions={(e) =>
               fetchOptions('assignees', { label: 'nickname', value: 'id' }, e)
             }
@@ -100,11 +104,17 @@ CreateProjectModal.propTypes = {
   loading: PropTypes.bool,
   onSubmit: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
+  selectedProject: PropTypes.object,
 }
 
 CreateProjectModal.defaultProps = {
   visible: false,
   loading: false,
+  selectedProject: {
+    title: null,
+    assigned_to: null,
+    category: null,
+  },
 }
 
 export default CreateProjectModal

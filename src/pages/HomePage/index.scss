@@ -1,12 +1,14 @@
-/* @use '../../index.scss';
-
-.ant-page-header-heading {
-  @extend .container;
-}
- */
 .layout {
   &-content {
     min-height: 280px;
-    padding: 24px;
+    padding: 1.5rem;
   }
+  &-row {
+    margin-top: 1.5rem;
+  }
+}
+
+.charts {
+  height: 300px !important;
+  width: 100% !important;
 }

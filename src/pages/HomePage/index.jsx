@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import {
   Button,
   Card,
+  Col,
   Divider,
   Layout,
   message,
   PageHeader,
   Popconfirm,
+  Row,
   Tooltip,
   Table,
   Tag,
@@ -15,11 +17,52 @@ import { PlusOutlined, SyncOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { api } from '../../helpers'
 import './index.scss'
-import { CreateProjectModal } from '../../components'
+import { ProjectModal, StatsCard } from '../../components'
 
 const { Content } = Layout
 
 const PAGE_SIZE = 5
+
+const initialState = {
+  loading: false,
+  projects: [],
+  params: {
+    current: 1,
+    pageSize: PAGE_SIZE,
+    orderBy: '-created_timestamp',
+  },
+}
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'FETCH_LOADING':
+      return {
+        ...state,
+        loading: true,
+        projects: [],
+      }
+    case 'FETCH_SUCCESS':
+      return {
+        ...state,
+        loading: false,
+        projects: action.payload.data,
+        params: {
+          ...state.params,
+          ...action.payload.meta,
+        },
+      }
+    case 'FETCH_PARAMS':
+      return {
+        ...state,
+        params: {
+          ...state.params,
+          ...action.payload.params,
+        },
+      }
+    default:
+      throw new Error()
+  }
+}
 
 const HomePage = () => {
   /**
@@ -27,32 +70,28 @@ const HomePage = () => {
    */
   const [modalVisible, setModalVisible] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
-
+  const [selectedProject, setSelectedProject] = useState({
+    title: null,
+    category: null,
+    assigned_to: null,
+  })
   /**
    * Table states
    */
-  const [reload, setReload] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [projects, setProjects] = useState([])
+  const [state, dispatch] = useReducer(reducer, initialState)
   const [assignees, setAssignees] = useState([])
   const [categories, setCategories] = useState([])
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: PAGE_SIZE,
-  })
+  const [categoriesLoading, setCategoriesLoading] = useState(false)
 
   /**
    * Retrieve projects with params and change the state
    */
   const loadProjects = async (params) => {
-    setLoading(true)
-    setProjects([])
+    dispatch({ type: 'FETCH_LOADING' })
     const results = await api.find('projects', {
       ...params,
     })
-    setProjects(results.data)
-    setPagination(results.meta)
-    setLoading(false)
+    dispatch({ type: 'FETCH_SUCCESS', payload: results })
   }
 
   /**
@@ -72,43 +111,62 @@ const HomePage = () => {
    * Retrieve all categories for filter by them
    */
   const loadCategories = async () => {
+    setCategoriesLoading(true)
     const results = await api.find('categories')
-    setCategories(
-      results.data.map(({ category }) => ({ text: category, value: category }))
-    )
+    setCategories(results.data)
+    setCategoriesLoading(false)
   }
 
   /**
-   * Delete project, // TODO: load again with current params
+   * Delete project and reload projects with saved params
    */
   const deleteProject = async (title, id) => {
-    await api.delete('projects', id)
-    await loadProjects({ pageSize: PAGE_SIZE })
-    message.success(`Project "${title}" deleted`, 2)
+    try {
+      await api.delete('projects', id)
+      await loadProjects(state.params)
+      await loadCategories()
+      message.success(`Project "${title}" deleted`)
+    } catch (error) {
+      message.error(`Could not delete project "${title}"`)
+    }
   }
 
   /**
-   * Create project and reload the table
+   * Create/Update project and reload the table
    */
-  const createProject = async (values) => {
+  const handleProjectModal = async (values) => {
     setModalLoading(true)
-    const hide = message.loading('Creation in progress...')
+    const hide = message.loading(
+      `${selectedProject ? 'Update' : 'Creation'} in progress...`
+    )
     try {
-      await api.create('projects', values)
-      hide()
-      message.success('Project created!')
+      /**
+       * Check if we edit or create a project
+       */
+      if (selectedProject) {
+        await api.update('projects', selectedProject.id, values)
+        await loadProjects(state.params)
+        await loadCategories()
+        setSelectedProject(null)
+      } else {
+        await api.create('projects', values)
+        handleReload()
+      }
       setModalVisible(false)
       setModalLoading(false)
-      await loadProjects({ pageSize: PAGE_SIZE })
+      hide()
+      message.success(`Project ${selectedProject ? 'updated' : 'created'}!`)
     } catch (err) {
       hide()
-      message.error('Could not create project')
+      message.error(
+        `Could not ${selectedProject ? 'update' : 'create'} project`
+      )
       setModalLoading(false)
     }
   }
 
   /**
-   * define table columns
+   * Define table columns
    */
   const columns = [
     {
@@ -119,7 +177,7 @@ const HomePage = () => {
     {
       title: 'Category',
       dataIndex: 'category',
-      filters: categories,
+      filters: categories.map(({ name }) => ({ text: name, value: name })),
       filterMultiple: false,
       render: (category) => (
         <Tag color="geekblue">{category.toUpperCase()}</Tag>
@@ -144,7 +202,15 @@ const HomePage = () => {
       key: 'action',
       render: (record) => (
         <>
-          <a href="#edit">Edit</a>
+          <a
+            href="#edit"
+            onClick={() => {
+              setSelectedProject(record)
+              setModalVisible(true)
+            }}
+          >
+            Edit
+          </a>
           <Divider type="vertical" />
           <Popconfirm
             title="Are you sure to delete this project?"
@@ -160,7 +226,7 @@ const HomePage = () => {
   ]
 
   useEffect(() => {
-    loadProjects({ pageSize: PAGE_SIZE, orderBy: 'created_timestamp' })
+    loadProjects({ pageSize: PAGE_SIZE, orderBy: '-created_timestamp' })
     loadAssignees()
     loadCategories()
   }, [])
@@ -176,20 +242,24 @@ const HomePage = () => {
     if (sorter.order) {
       params.orderBy = `${sorter.order === 'descend' ? '-' : ''}${sorter.field}`
     } else {
-      params.orderBy = 'created_timestamp'
+      params.orderBy = '-created_timestamp'
     }
 
     if (filters.assigned_to) params.assigned_to = filters.assigned_to[0]
 
     if (filters.category) params.category = filters.category[0]
 
+    /**
+     * Save params for project reloading after deletion
+     */
+    dispatch({ type: 'FETCH_PARAMS', payload: { params } })
     await loadProjects(params)
   }
 
   const handleReload = async () => {
-    setReload(true)
-    await loadProjects({ pageSize: PAGE_SIZE })
-    setReload(false)
+    await loadProjects({ pageSize: PAGE_SIZE, orderBy: '-created_timestamp' })
+    await loadAssignees()
+    await loadCategories()
   }
 
   return (
@@ -200,7 +270,7 @@ const HomePage = () => {
         extra={[
           <Tooltip key="2" title="Reload">
             <Button
-              loading={reload}
+              loading={state.loading}
               onClick={handleReload}
               icon={<SyncOutlined />}
             />
@@ -216,22 +286,37 @@ const HomePage = () => {
         ]}
       />
       <Content className="layout-content">
-        <CreateProjectModal
-          visible={modalVisible}
-          loading={modalLoading}
-          onSubmit={createProject}
-          onCancel={() => setModalVisible(false)}
-        />
-        <Card>
-          <Table
-            rowKey={(record) => record.id}
-            columns={columns}
-            dataSource={projects}
-            pagination={pagination}
-            loading={loading}
-            onChange={handleTableChange}
+        <>
+          <ProjectModal
+            visible={modalVisible}
+            loading={modalLoading}
+            selectedProject={selectedProject}
+            onSubmit={handleProjectModal}
+            onCancel={() => setModalVisible(false)}
           />
-        </Card>
+          <Card>
+            <Table
+              rowKey={(record) => record.id}
+              columns={columns}
+              dataSource={state.projects}
+              pagination={state.params}
+              loading={state.loading}
+              onChange={handleTableChange}
+            />
+          </Card>
+        </>
+        <Row className="layout-row">
+          <Col xs={24} sm={24} md={14} lg={12} xl={8}>
+            <StatsCard
+              loading={categoriesLoading}
+              title="Breakdown of projects by category"
+              data={categories.map(({ name, projects }) => ({
+                type: name,
+                value: projects,
+              }))}
+            />
+          </Col>
+        </Row>
       </Content>
     </Layout>
   )
