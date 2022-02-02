@@ -263,7 +263,7 @@ const HomePage = () => {
   }
 
   return (
-    <Layout>
+    <Layout className="layout">
       <PageHeader
         ghost={false}
         title="Projects manager"
@@ -296,6 +296,7 @@ const HomePage = () => {
           />
           <Card>
             <Table
+              className="layout-content-table"
               rowKey={(record) => record.id}
               columns={columns}
               dataSource={state.projects}
