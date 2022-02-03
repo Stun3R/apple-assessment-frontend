@@ -70,11 +70,7 @@ const HomePage = () => {
    */
   const [modalVisible, setModalVisible] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
-  const [selectedProject, setSelectedProject] = useState({
-    title: null,
-    category: null,
-    assigned_to: null,
-  })
+
   /**
    * Table states
    */
@@ -136,33 +132,17 @@ const HomePage = () => {
    */
   const handleProjectModal = async (values) => {
     setModalLoading(true)
-    const hide = message.loading(
-      `${selectedProject.title ? 'Update' : 'Creation'} in progress...`
-    )
+    const hide = message.loading(`Creation in progress...`)
     try {
-      /**
-       * Check if we edit or create a project
-       */
-      if (selectedProject.title) {
-        await api.update('projects', selectedProject.id, values)
-        await loadProjects(state.params)
-        await loadCategories()
-        setSelectedProject(null)
-      } else {
-        await api.create('projects', values)
-        handleReload()
-      }
+      await api.create('projects', values)
+      handleReload()
       setModalVisible(false)
       setModalLoading(false)
       hide()
-      message.success(
-        `Project ${selectedProject.title ? 'updated' : 'created'}!`
-      )
+      message.success(`Success!`)
     } catch (err) {
       hide()
-      message.error(
-        `Could not ${selectedProject.title ? 'update' : 'create'} project`
-      )
+      message.error(`Something went wrong`)
       setModalLoading(false)
     }
   }
@@ -204,16 +184,6 @@ const HomePage = () => {
       key: 'action',
       render: (record) => (
         <>
-          <a
-            href="#edit"
-            onClick={() => {
-              setSelectedProject(record)
-              setModalVisible(true)
-            }}
-          >
-            Edit
-          </a>
-          <Divider type="vertical" />
           <Popconfirm
             title="Are you sure to delete this project?"
             okText="Yes"
@@ -292,7 +262,6 @@ const HomePage = () => {
           <ProjectModal
             visible={modalVisible}
             loading={modalLoading}
-            selectedProject={selectedProject}
             onSubmit={handleProjectModal}
             onCancel={() => setModalVisible(false)}
           />
