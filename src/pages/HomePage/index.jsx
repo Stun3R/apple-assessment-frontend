@@ -283,7 +283,7 @@ const HomePage = () => {
               title="Breakdown of projects by category"
               data={categories.map(({ name, projects }) => ({
                 type: name,
-                value: projects,
+                value: parseInt(projects),
               }))}
             />
           </Col>
