@@ -137,7 +137,7 @@ const HomePage = () => {
   const handleProjectModal = async (values) => {
     setModalLoading(true)
     const hide = message.loading(
-      `${selectedProject ? 'Update' : 'Creation'} in progress...`
+      `${selectedProject.title ? 'Update' : 'Creation'} in progress...`
     )
     try {
       /**
@@ -155,11 +155,13 @@ const HomePage = () => {
       setModalVisible(false)
       setModalLoading(false)
       hide()
-      message.success(`Project ${selectedProject ? 'updated' : 'created'}!`)
+      message.success(
+        `Project ${selectedProject.title ? 'updated' : 'created'}!`
+      )
     } catch (err) {
       hide()
       message.error(
-        `Could not ${selectedProject ? 'update' : 'create'} project`
+        `Could not ${selectedProject.title ? 'update' : 'create'} project`
       )
       setModalLoading(false)
     }
