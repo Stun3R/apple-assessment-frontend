@@ -13,13 +13,7 @@ const fetchOptions = async (entity, keys, search) => {
     )
 }
 
-const CreateProjectModal = ({
-  visible,
-  loading,
-  onSubmit,
-  onCancel,
-  selectedProject,
-}) => {
+const CreateProjectModal = ({ visible, loading, onSubmit, onCancel }) => {
   const [form] = Form.useForm()
 
   const handleOk = () => {
@@ -37,7 +31,7 @@ const CreateProjectModal = ({
       title="Project"
       visible={visible}
       onOk={handleOk}
-      okText={selectedProject.title ? 'Update' : 'Create'}
+      okText="Save"
       onCancel={onCancel}
       getContainer={false}
       confirmLoading={loading}
@@ -46,7 +40,7 @@ const CreateProjectModal = ({
         form={form}
         layout="vertical"
         name="form_in_modal"
-        initialValues={{ ...selectedProject }}
+        initialValues={{ assigned_to: null }}
       >
         <Form.Item
           name="title"
@@ -104,17 +98,11 @@ CreateProjectModal.propTypes = {
   loading: PropTypes.bool,
   onSubmit: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
-  selectedProject: PropTypes.object,
 }
 
 CreateProjectModal.defaultProps = {
   visible: false,
   loading: false,
-  selectedProject: {
-    title: null,
-    assigned_to: null,
-    category: null,
-  },
 }
 
 export default CreateProjectModal
