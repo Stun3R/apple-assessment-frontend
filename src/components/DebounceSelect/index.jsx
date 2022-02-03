@@ -24,23 +24,33 @@ const DebounceSelect = ({
       const fetchId = fetchRef.current
       setOptions([])
       setFetching(true)
-      fetchOptions(value).then((newOptions) => {
-        if (fetchId !== fetchRef.current) {
-          // for fetch callback order
-          return
-        }
-        /**
-         * Create new entity if not found
-         */
-        if (newOptions.length === 0)
-          newOptions.push({ label: `Create "${value}"`, value })
-        setOptions(newOptions)
-        setFetching(false)
-      })
+      fetchOptions(value)
+        .then((newOptions) => {
+          if (fetchId !== fetchRef.current) {
+            // for fetch callback order
+            return
+          }
+          /**
+           * Create new entity if not found
+           */
+          if (newOptions.length === 0) {
+            /**
+             * Handle focus event
+             */
+            if (value.target) {
+              if (allowNull) newOptions.push({ label: 'None', value: null })
+            } else {
+              newOptions.push({ label: `Create "${value}"`, value })
+            }
+          }
+          setOptions(newOptions)
+          setFetching(false)
+        })
+        .catch((err) => console.log(err))
     }
 
     return debounce(loadOptions, debounceTimeout)
-  }, [fetchOptions, debounceTimeout])
+  }, [fetchOptions, debounceTimeout, allowNull])
 
   return (
     <Select
