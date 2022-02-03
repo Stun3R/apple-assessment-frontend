@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import { Error } from './components'
 import { HomePage } from './pages'
-import './index.css'
+import './index.scss'
 
 ReactDOM.render(
   <>

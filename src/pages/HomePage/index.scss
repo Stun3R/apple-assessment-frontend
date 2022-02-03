@@ -1,0 +1,18 @@
+.layout {
+  min-height: 100vh !important;
+  &-content {
+    min-height: 280px;
+    padding: 1.5rem;
+    &-table {
+      overflow-x: scroll;
+    }
+  }
+  &-row {
+    margin-top: 1.5rem;
+  }
+}
+
+.charts {
+  height: 300px !important;
+  width: 100% !important;
+}
